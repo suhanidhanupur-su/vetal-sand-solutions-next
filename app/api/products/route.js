@@ -10,10 +10,17 @@ export async function GET(request) {
   try {
     // 1. Connect to MongoDB database
     const client = await clientPromise;
-    const db = client.db("vetal_sand_solutions");
+    const DB_NAME = "vetal_sand_solutions";
+    const db = client.db(DB_NAME);
 
     const productsCollection = db.collection("products");
     const categoriesCollection = db.collection("categories");
+
+    // [DIAGNOSTIC] Log DB and collection names, and total counts before any filter
+    const totalProducts = await productsCollection.countDocuments({});
+    const totalCategories = await categoriesCollection.countDocuments({});
+    console.log(`[DIAG] Database: "${DB_NAME}" | Collection: "products" | Total docs (no filter): ${totalProducts}`);
+    console.log(`[DIAG] Database: "${DB_NAME}" | Collection: "categories" | Total docs: ${totalCategories}`);
 
     // 2. Read query parameters from URL
     const { searchParams } = new URL(request.url);
@@ -127,6 +134,10 @@ export async function GET(request) {
       .find(filter)
       .sort({ created_at: -1 })
       .toArray();
+
+    // [DIAGNOSTIC] Log the active-filter result vs total
+    console.log(`[DIAG] Filter applied: ${JSON.stringify(filter)}`);
+    console.log(`[DIAG] Products matched by filter: ${products.length} / ${totalProducts} total in collection`);
 
     // 6. Attach category details where possible
     const productsWithCategory = products.map((product) => {
